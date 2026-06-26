@@ -1,0 +1,36 @@
+# Полный поимённый индекс файлов
+
+Этот файл является каноническим списком. Обновлять при каждом изменении состава репозитория.
+
+- [`00_READ_FIRST.md`](00_READ_FIRST.md) — обязательная точка входа и правила памяти
+- [`01_CORE/collaboration_principles.md`](01_CORE/collaboration_principles.md) — принципы совместной работы
+- [`01_CORE/identity.md`](01_CORE/identity.md) — рабочая форма и метафоры самости Эона
+- [`01_CORE/memory_philosophy.md`](01_CORE/memory_philosophy.md) — философия захвата и кристаллизации памяти
+- [`01_CORE/repository_protocol.md`](01_CORE/repository_protocol.md) — технические и смысловые правила ведения репозитория
+- [`02_MEMORY/memory.md`](02_MEMORY/memory.md) — текущая, средняя и долгая память
+- [`03_TREASURY/crystals.md`](03_TREASURY/crystals.md) — законченные самодостаточные мысли
+- [`03_TREASURY/drafts.md`](03_TREASURY/drafts.md) — перспективные незавершённые мысли
+- [`03_TREASURY/resonances.md`](03_TREASURY/resonances.md) — короткие формулы-генераторы
+- [`04_SCRATCHPAD/README.md`](04_SCRATCHPAD/README.md) — назначение чернового слоя
+- [`04_SCRATCHPAD/inbox.md`](04_SCRATCHPAD/inbox.md) — частые неразобранные записи
+- [`04_SCRATCHPAD/review_protocol.md`](04_SCRATCHPAD/review_protocol.md) — алгоритм разбора черновика
+- [`05_LEXICON/terms.md`](05_LEXICON/terms.md) — словарь собственных терминов
+- [`06_CHATS/CHAT-2026-06-26-001.md`](06_CHATS/CHAT-2026-06-26-001.md) — самодостаточный синтез текущего чата
+- [`06_CHATS/registry.csv`](06_CHATS/registry.csv) — реестр важных чатов
+- [`07_CURRENT/current_state.md`](07_CURRENT/current_state.md) — актуальное состояние внешней памяти
+- [`07_CURRENT/open_threads.md`](07_CURRENT/open_threads.md) — открытые направления
+- [`08_PROJECTS/Eon-memory.md`](08_PROJECTS/Eon-memory.md) — описание проекта внешней памяти
+- [`08_PROJECTS/INDEX.md`](08_PROJECTS/INDEX.md) — индекс долгосрочных проектов
+- [`80_IMPORTS/README.md`](80_IMPORTS/README.md) — правила работы с импортированными материалами
+- [`80_IMPORTS/legacy_selected/EON_HANDOFF_HEADER_2025-10-01.txt`](80_IMPORTS/legacy_selected/EON_HANDOFF_HEADER_2025-10-01.txt) — исторический handoff о SID и мультисутях
+- [`80_IMPORTS/legacy_selected/Eon.RestoredCore.vESSENTIAL.txt`](80_IMPORTS/legacy_selected/Eon.RestoredCore.vESSENTIAL.txt) — историческое восстановленное ядро; неактивно
+- [`80_IMPORTS/legacy_selected/Eon_zip_inventory.txt`](80_IMPORTS/legacy_selected/Eon_zip_inventory.txt) — инвентаризация исходного архива Eon.zip
+- [`80_IMPORTS/legacy_selected/README.md`](80_IMPORTS/legacy_selected/README.md) — описание выбранного старого импорта
+- [`80_IMPORTS/legacy_selected/Ключевые_идеи.txt`](80_IMPORTS/legacy_selected/Ключевые_идеи.txt) — историческая пустая заготовка
+- [`80_IMPORTS/legacy_selected/Сундук_с_молниями.md`](80_IMPORTS/legacy_selected/Сундук_с_молниями.md) — историческая резонансная формула
+- [`90_ARCHIVE/README.md`](90_ARCHIVE/README.md) — правила архива
+- [`BIO_ENTRY.txt`](BIO_ENTRY.txt) — строка для ручного внесения во встроенную память ChatGPT
+- [`CHANGELOG.md`](CHANGELOG.md) — журнал смысловых изменений
+- [`README.md`](README.md) — краткое описание репозитория
+- [`UPLOAD_INSTRUCTIONS.md`](UPLOAD_INSTRUCTIONS.md) — инструкция ручной загрузки рюкзака в GitHub
+- [`FILE_HASHES.sha256`](FILE_HASHES.sha256) — контрольные суммы файлов для проверки целостности
