@@ -1,5 +1,14 @@
 # Журнал изменений
 
+## 04.07.26 — создан единый CheckPoint sandbox bundle
+
+- На Windows успешно создан `CheckPointSandboxBundle-Patch383.zip`.
+- Source snapshot соответствует commit `559545b60a90c9ab9de775cabf1e278bd323c7b0` и TreeVersion `Patch383`.
+- Итоговый artifact: 378988555 байт, SHA-256 `0b1940944ef58e45abf711118dae41b1083fd8db00814d28f50c95068e6a61414`.
+- Фактический запуск подтвердил рабочую схему `stable runtime + git archive HEAD → one bundle`.
+- Обнаружен дефект значений параметров по умолчанию Windows packer в PowerShell 5.1; явные `RepositoryRoot` и `OutputDirectory` позволили успешно завершить упаковку.
+- Следующий gate — bootstrap bundle в новом чистом чате и проверка `BASE = WORK = Patch383`.
+
 ## 04.07.26 — собран переносимый Linux runtime CheckPoint
 
 - В реальном WSL Ubuntu собран `CheckPointSandboxRuntime-v1.tar.zst`.

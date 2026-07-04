@@ -12,9 +12,8 @@
 
 ## Инженерная среда CheckPoint
 
-- Создать `CheckPointSandboxBundle-Patch383.zip` из подтверждённого runtime и clean Git tree.
-- В новом чистом чате проверить checksum, bootstrap, версии инструментов, SandboxPatchBuilder self-test и `BASE = WORK = Patch383`.
-- После реальной проверки решить узкий Patch384: закрепить локальный runtime builder, preflight зависимости `libicu` и фактические metadata runtime либо скорректировать scope по результату bootstrap.
+- В новом чистом чате проверить `CheckPointSandboxBundle-Patch383.zip`: checksum, bootstrap, версии инструментов, SandboxPatchBuilder self-test и `BASE = WORK = Patch383`.
+- После реальной проверки решить узкий Patch384: закрепить локальный runtime builder, preflight зависимости `libicu`, исправление параметров по умолчанию Windows packer и фактические metadata runtime либо скорректировать scope по результату bootstrap.
 
 ## Концепты
 
