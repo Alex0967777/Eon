@@ -29,6 +29,8 @@
 - [`80_IMPORTS/legacy_selected/Ключевые_идеи.txt`](80_IMPORTS/legacy_selected/Ключевые_идеи.txt) — историческая пустая заготовка
 - [`80_IMPORTS/legacy_selected/Сундук_с_молниями.md`](80_IMPORTS/legacy_selected/Сундук_с_молниями.md) — историческая резонансная формула
 - [`90_ARCHIVE/README.md`](90_ARCHIVE/README.md) — правила архива
+- [`Apply-EonMemory.bat`](Apply-EonMemory.bat) — однокнопочный запуск применения очередного патча памяти
+- [`Apply-EonMemory.ps1`](Apply-EonMemory.ps1) — проверка, применение, commit и push `Patch_EonN.zip`
 - [`BIO_ENTRY.txt`](BIO_ENTRY.txt) — строка для ручного внесения во встроенную память ChatGPT
 - [`CHANGELOG.md`](CHANGELOG.md) — журнал смысловых изменений
 - [`README.md`](README.md) — краткое описание репозитория
