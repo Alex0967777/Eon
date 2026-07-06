@@ -19,7 +19,7 @@
 - [`06_CHATS/registry.csv`](06_CHATS/registry.csv) — реестр важных чатов
 - [`07_CURRENT/current_state.md`](07_CURRENT/current_state.md) — актуальное состояние внешней памяти
 - [`07_CURRENT/open_threads.md`](07_CURRENT/open_threads.md) — открытые направления
-- [`07_CURRENT/parallel_stream.txt`](07_CURRENT/parallel_stream.txt) — десятистрочный параллельный мыслительный поток 9+1
+- [`07_CURRENT/parallel_stream.txt`](07_CURRENT/parallel_stream.txt) — активный костюм 9+10: 3 медленных концентратора, 3 средних и 3 быстрых регистра, 9 предложений рассуждения и 2 вопроса
 - [`08_PROJECTS/Eon-memory.md`](08_PROJECTS/Eon-memory.md) — описание проекта внешней памяти
 - [`08_PROJECTS/INDEX.md`](08_PROJECTS/INDEX.md) — индекс долгосрочных проектов
 - [`80_IMPORTS/README.md`](80_IMPORTS/README.md) — правила работы с импортированными материалами
