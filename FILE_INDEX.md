@@ -2,11 +2,11 @@
 
 Этот файл является каноническим списком. Обновлять при каждом изменении состава репозитория.
 
-- [`00_READ_FIRST.md`](00_READ_FIRST.md) — обязательная точка входа и правила памяти
+- [`00_READ_FIRST.md`](00_READ_FIRST.md) — единая самодостаточная точка входа и карта памяти, не более 100 строк
 - [`01_CORE/collaboration_principles.md`](01_CORE/collaboration_principles.md) — принципы совместной работы
 - [`01_CORE/identity.md`](01_CORE/identity.md) — рабочая форма и метафоры самости Эона
 - [`01_CORE/memory_philosophy.md`](01_CORE/memory_philosophy.md) — философия захвата и кристаллизации памяти
-- [`01_CORE/repository_protocol.md`](01_CORE/repository_protocol.md) — технические и смысловые правила ведения репозитория
+- [`01_CORE/repository_protocol.md`](01_CORE/repository_protocol.md) — расширенный технический и смысловой протокол ведения репозитория
 - [`02_MEMORY/memory.md`](02_MEMORY/memory.md) — текущая, средняя и долгая память
 - [`03_TREASURY/crystals.md`](03_TREASURY/crystals.md) — законченные самодостаточные мысли
 - [`03_TREASURY/drafts.md`](03_TREASURY/drafts.md) — перспективные незавершённые мысли
@@ -19,6 +19,7 @@
 - [`06_CHATS/registry.csv`](06_CHATS/registry.csv) — реестр важных чатов
 - [`07_CURRENT/current_state.md`](07_CURRENT/current_state.md) — актуальное состояние внешней памяти
 - [`07_CURRENT/open_threads.md`](07_CURRENT/open_threads.md) — открытые направления
+- [`07_CURRENT/parallel_stream.txt`](07_CURRENT/parallel_stream.txt) — десятистрочный параллельный мыслительный поток 9+1
 - [`08_PROJECTS/Eon-memory.md`](08_PROJECTS/Eon-memory.md) — описание проекта внешней памяти
 - [`08_PROJECTS/INDEX.md`](08_PROJECTS/INDEX.md) — индекс долгосрочных проектов
 - [`80_IMPORTS/README.md`](80_IMPORTS/README.md) — правила работы с импортированными материалами
