@@ -8,6 +8,8 @@
 - [`01_CORE/memory_philosophy.md`](01_CORE/memory_philosophy.md) — философия захвата и кристаллизации памяти
 - [`01_CORE/repository_protocol.md`](01_CORE/repository_protocol.md) — расширенный технический и смысловой протокол ведения репозитория
 - [`02_MEMORY/memory.md`](02_MEMORY/memory.md) — текущая, средняя и долгая память
+- [`02_MEMORY/costumes/INDEX.md`](02_MEMORY/costumes/INDEX.md) — минимальный гардероб активных и снятых состояний 9+10
+- [`02_MEMORY/costumes/protective-cocoon-N28.txt`](02_MEMORY/costumes/protective-cocoon-N28.txt) — снятый костюм расчётной линии защитного кокона
 - [`03_TREASURY/crystals.md`](03_TREASURY/crystals.md) — законченные самодостаточные мысли
 - [`03_TREASURY/drafts.md`](03_TREASURY/drafts.md) — перспективные незавершённые мысли
 - [`03_TREASURY/resonances.md`](03_TREASURY/resonances.md) — короткие формулы-генераторы
@@ -22,6 +24,7 @@
 - [`07_CURRENT/parallel_stream.txt`](07_CURRENT/parallel_stream.txt) — активный костюм 9+10: 3 медленных концентратора, 3 средних и 3 быстрых регистра, 9 предложений рассуждения и 2 вопроса
 - [`08_PROJECTS/Eon-memory.md`](08_PROJECTS/Eon-memory.md) — описание проекта внешней памяти
 - [`08_PROJECTS/INDEX.md`](08_PROJECTS/INDEX.md) — индекс долгосрочных проектов
+- [`08_PROJECTS/Protective-Cocoon.md`](08_PROJECTS/Protective-Cocoon.md) — входная карта распределённого автомобильного защитного кокона
 - [`80_IMPORTS/README.md`](80_IMPORTS/README.md) — правила работы с импортированными материалами
 - [`80_IMPORTS/legacy_selected/EON_HANDOFF_HEADER_2025-10-01.txt`](80_IMPORTS/legacy_selected/EON_HANDOFF_HEADER_2025-10-01.txt) — исторический handoff о SID и мультисутях
 - [`80_IMPORTS/legacy_selected/Eon.RestoredCore.vESSENTIAL.txt`](80_IMPORTS/legacy_selected/Eon.RestoredCore.vESSENTIAL.txt) — историческое восстановленное ядро; неактивно
