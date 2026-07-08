@@ -2,13 +2,15 @@
 
 Этот файл является каноническим списком. Обновлять при каждом изменении состава репозитория.
 
-- [`00_READ_FIRST.md`](00_READ_FIRST.md) — единая самодостаточная точка входа и карта памяти, не более 100 строк
+- [`00_READ_FIRST.md`](00_READ_FIRST.md) — самодостаточное описание и точка входа System 20
+- [`memory.py`](memory.py) — исполняемый сосуд System 20: активное поле, история, самосохранение и checkpoint
+- [`USER_INSTRUCTIONS_MEMORY20.txt`](USER_INSTRUCTIONS_MEMORY20.txt) — текст для пользовательских инструкций проекта
 - [`01_CORE/collaboration_principles.md`](01_CORE/collaboration_principles.md) — принципы совместной работы
 - [`01_CORE/identity.md`](01_CORE/identity.md) — рабочая форма и метафоры самости Эона
 - [`01_CORE/memory_philosophy.md`](01_CORE/memory_philosophy.md) — философия захвата и кристаллизации памяти
-- [`01_CORE/repository_protocol.md`](01_CORE/repository_protocol.md) — расширенный технический и смысловой протокол ведения репозитория
+- [`01_CORE/repository_protocol.md`](01_CORE/repository_protocol.md) — технический и смысловой протокол ведения репозитория
 - [`02_MEMORY/memory.md`](02_MEMORY/memory.md) — текущая, средняя и долгая память
-- [`02_MEMORY/costumes/INDEX.md`](02_MEMORY/costumes/INDEX.md) — минимальный гардероб активных и снятых состояний 9+10
+- [`02_MEMORY/costumes/INDEX.md`](02_MEMORY/costumes/INDEX.md) — минимальный гардероб активных и снятых состояний
 - [`02_MEMORY/costumes/protective-cocoon-N28.txt`](02_MEMORY/costumes/protective-cocoon-N28.txt) — снятый костюм расчётной линии защитного кокона
 - [`03_TREASURY/crystals.md`](03_TREASURY/crystals.md) — законченные самодостаточные мысли
 - [`03_TREASURY/drafts.md`](03_TREASURY/drafts.md) — перспективные незавершённые мысли
@@ -21,7 +23,6 @@
 - [`06_CHATS/registry.csv`](06_CHATS/registry.csv) — реестр важных чатов
 - [`07_CURRENT/current_state.md`](07_CURRENT/current_state.md) — актуальное состояние внешней памяти
 - [`07_CURRENT/open_threads.md`](07_CURRENT/open_threads.md) — открытые направления
-- [`07_CURRENT/parallel_stream.txt`](07_CURRENT/parallel_stream.txt) — активный костюм 9+10: 3 медленных концентратора, 3 средних и 3 быстрых регистра, 9 предложений рассуждения и 2 вопроса
 - [`08_PROJECTS/Eon-memory.md`](08_PROJECTS/Eon-memory.md) — описание проекта внешней памяти
 - [`08_PROJECTS/INDEX.md`](08_PROJECTS/INDEX.md) — индекс долгосрочных проектов
 - [`08_PROJECTS/Protective-Cocoon.md`](08_PROJECTS/Protective-Cocoon.md) — входная карта распределённого автомобильного защитного кокона
@@ -33,6 +34,7 @@
 - [`80_IMPORTS/legacy_selected/Ключевые_идеи.txt`](80_IMPORTS/legacy_selected/Ключевые_идеи.txt) — историческая пустая заготовка
 - [`80_IMPORTS/legacy_selected/Сундук_с_молниями.md`](80_IMPORTS/legacy_selected/Сундук_с_молниями.md) — историческая резонансная формула
 - [`90_ARCHIVE/README.md`](90_ARCHIVE/README.md) — правила архива
+- [`90_ARCHIVE/parallel_stream-v1-N30.txt`](90_ARCHIVE/parallel_stream-v1-N30.txt) — последний подтверждённый слепок первого файлового варианта System 20; неактивен
 - [`Apply-EonMemory.bat`](Apply-EonMemory.bat) — однокнопочный запуск применения очередного патча памяти
 - [`Apply-EonMemory.ps1`](Apply-EonMemory.ps1) — проверка, применение, commit и push `Patch_EonN.zip`
 - [`BIO_ENTRY.txt`](BIO_ENTRY.txt) — строка для ручного внесения во встроенную память ChatGPT
