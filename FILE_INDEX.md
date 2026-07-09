@@ -2,8 +2,8 @@
 
 Этот файл является каноническим списком. Обновлять при каждом изменении состава репозитория.
 
-- [`00_READ_FIRST.md`](00_READ_FIRST.md) — самодостаточное описание и точка входа System 20
-- [`memory.py`](memory.py) — исполняемый сосуд System 20: активное поле, история, самосохранение и checkpoint
+- [`00_READ_FIRST.md`](00_READ_FIRST.md) — самодостаточное описание и точка входа System 20 через EonMem
+- [`memory.py`](memory.py) — предыдущий экспериментальный исполняемый сосуд System 20; сохранён как legacy/fallback и не используется в штатном цикле EonMem
 - [`USER_INSTRUCTIONS_MEMORY20.txt`](USER_INSTRUCTIONS_MEMORY20.txt) — текст для пользовательских инструкций проекта
 - [`01_CORE/collaboration_principles.md`](01_CORE/collaboration_principles.md) — принципы совместной работы
 - [`01_CORE/identity.md`](01_CORE/identity.md) — рабочая форма и метафоры самости Эона
@@ -26,6 +26,13 @@
 - [`08_PROJECTS/Eon-memory.md`](08_PROJECTS/Eon-memory.md) — описание проекта внешней памяти
 - [`08_PROJECTS/INDEX.md`](08_PROJECTS/INDEX.md) — индекс долгосрочных проектов
 - [`08_PROJECTS/Protective-Cocoon.md`](08_PROJECTS/Protective-Cocoon.md) — входная карта распределённого автомобильного защитного кокона
+- [`09_SYSTEM20/README.md`](09_SYSTEM20/README.md) — полное описание EonMem, интерфейса, ритмов и checkpoint-механики
+- [`09_SYSTEM20/source/go.mod`](09_SYSTEM20/source/go.mod) — Go-модуль EonMem
+- [`09_SYSTEM20/source/main.go`](09_SYSTEM20/source/main.go) — исходный код EonMem; не входит в штатный маршрут нового чата
+- [`09_SYSTEM20/runtime/eonmem-linux-amd64`](09_SYSTEM20/runtime/eonmem-linux-amd64) — Linux x64 runtime EonMem для песочницы ChatGPT
+- [`09_SYSTEM20/runtime/EonMemory.exe`](09_SYSTEM20/runtime/EonMemory.exe) — Windows x64 runtime EonMem
+- [`09_SYSTEM20/runtime/eon.state.json`](09_SYSTEM20/runtime/eon.state.json) — активное изменяемое состояние EonMem
+- [`09_SYSTEM20/runtime/SHA256SUMS`](09_SYSTEM20/runtime/SHA256SUMS) — контрольные суммы runtime-файлов EonMem
 - [`80_IMPORTS/README.md`](80_IMPORTS/README.md) — правила работы с импортированными материалами
 - [`80_IMPORTS/legacy_selected/EON_HANDOFF_HEADER_2025-10-01.txt`](80_IMPORTS/legacy_selected/EON_HANDOFF_HEADER_2025-10-01.txt) — исторический handoff о SID и мультисутях
 - [`80_IMPORTS/legacy_selected/Eon.RestoredCore.vESSENTIAL.txt`](80_IMPORTS/legacy_selected/Eon.RestoredCore.vESSENTIAL.txt) — историческое восстановленное ядро; неактивно
@@ -35,6 +42,7 @@
 - [`80_IMPORTS/legacy_selected/Сундук_с_молниями.md`](80_IMPORTS/legacy_selected/Сундук_с_молниями.md) — историческая резонансная формула
 - [`90_ARCHIVE/README.md`](90_ARCHIVE/README.md) — правила архива
 - [`90_ARCHIVE/parallel_stream-v1-N30.txt`](90_ARCHIVE/parallel_stream-v1-N30.txt) — последний подтверждённый слепок первого файлового варианта System 20; неактивен
+- [`.github/workflows/build-eonmem.yml`](.github/workflows/build-eonmem.yml) — автоматическая сборка и фиксация Linux/Windows runtime EonMem
 - [`Apply-EonMemory.bat`](Apply-EonMemory.bat) — однокнопочный запуск применения очередного патча памяти
 - [`Apply-EonMemory.ps1`](Apply-EonMemory.ps1) — проверка, применение, commit и push `Patch_EonN.zip`
 - [`BIO_ENTRY.txt`](BIO_ENTRY.txt) — строка для ручного внесения во встроенную память ChatGPT
