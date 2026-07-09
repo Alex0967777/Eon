@@ -1,0 +1,99 @@
+name: Build EonMem runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '09_SYSTEM20/source/**'
+      - '.github/workflows/build-eonmem.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 09_SYSTEM20/source/go.mod
+
+      - name: Build Linux and Windows runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p 09_SYSTEM20/runtime
+          cd 09_SYSTEM20/source
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../runtime/eonmem-linux-amd64 .
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../runtime/EonMemory.exe .
+          chmod 0755 ../runtime/eonmem-linux-amd64
+
+      - name: Smoke test Linux runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          09_SYSTEM20/runtime/eonmem-linux-amd64 --show > /tmp/eonmem-show.txt
+          grep -q 'СИСТЕМА 20' /tmp/eonmem-show.txt
+          grep -q 'Режим просмотра: состояние не изменено.' /tmp/eonmem-show.txt
+
+      - name: Write runtime checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd 09_SYSTEM20/runtime
+          sha256sum eonmem-linux-amd64 EonMemory.exe eon.state.json > SHA256SUMS
+
+      - name: Refresh repository hashes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import re
+
+          root = Path('.')
+          items = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root).as_posix()
+              if rel.startswith('.git/') or rel == 'FILE_HASHES.sha256':
+                  continue
+              if rel.endswith('/Launch_EON.zip') or rel == 'Launch_EON.zip':
+                  continue
+              if rel.endswith('/backpack.zip') or rel == 'backpack.zip':
+                  continue
+              if re.search(r'(^|/)Patch_Eon[0-9]+\.zip$', rel):
+                  continue
+              items.append((rel, path))
+
+          items.sort(key=lambda item: item[0])
+          with open('FILE_HASHES.sha256', 'w', encoding='utf-8', newline='\n') as output:
+              for rel, path in items:
+                  digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                  output.write(f'{digest}  {rel}\n')
+          PY
+
+      - name: Commit generated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 09_SYSTEM20/runtime/eonmem-linux-amd64 \
+                  09_SYSTEM20/runtime/EonMemory.exe \
+                  09_SYSTEM20/runtime/SHA256SUMS \
+                  FILE_HASHES.sha256
+          if git diff --cached --quiet; then
+            echo 'Runtime is already current.'
+            exit 0
+          fi
+          git commit -m 'Build EonMem v0.1.1 runtime [skip ci]'
+          git push
