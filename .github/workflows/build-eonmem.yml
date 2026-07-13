@@ -1,10 +1,11 @@
-name: Build EonMem runtime
+name: Build EonMem Python capsule
 
 on:
   push:
     branches: [main]
     paths:
-      - '09_SYSTEM20/source/**'
+      - '09_SYSTEM20/source/eonmem_python.py'
+      - '09_SYSTEM20/runtime/eon.loader.py'
       - '.github/workflows/build-eonmem.yml'
   workflow_dispatch:
 
@@ -20,35 +21,57 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          go-version-file: 09_SYSTEM20/source/go.mod
+          python-version: '3.11'
 
-      - name: Build Linux and Windows runtime
+      - name: Build deterministic runtime capsule
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p 09_SYSTEM20/runtime
-          cd 09_SYSTEM20/source
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../runtime/eonmem-linux-amd64 .
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../runtime/EonMemory.exe .
-          chmod 0755 ../runtime/eonmem-linux-amd64
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import gzip
+          import hashlib
+          import json
 
-      - name: Smoke test Linux runtime
+          source_path = Path('09_SYSTEM20/source/eonmem_python.py')
+          capsule_path = Path('09_SYSTEM20/runtime/eon.runtime.json')
+
+          source = source_path.read_bytes()
+          capsule = {
+              'format': 'EonRuntimeCapsule',
+              'version': 1,
+              'engine': 'python3',
+              'codec': 'gzip+base64',
+              'entrypoint': source_path.name,
+              'source_sha256': hashlib.sha256(source).hexdigest(),
+              'payload': base64.b64encode(gzip.compress(source, mtime=0)).decode('ascii'),
+          }
+          capsule_path.write_text(
+              json.dumps(capsule, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+          PY
+
+      - name: Smoke test capsule route
         shell: bash
         run: |
           set -euo pipefail
-          09_SYSTEM20/runtime/eonmem-linux-amd64 --show > /tmp/eonmem-show.txt
+          python3 09_SYSTEM20/runtime/eon.loader.py --version | grep -q 'eonmem 0.1.1'
+          python3 09_SYSTEM20/runtime/eon.loader.py --show > /tmp/eonmem-show.txt
           grep -q 'СИСТЕМА 20' /tmp/eonmem-show.txt
           grep -q 'Режим просмотра: состояние не изменено.' /tmp/eonmem-show.txt
 
-      - name: Write runtime checksums
+      - name: Write immutable runtime checksums
         shell: bash
         run: |
           set -euo pipefail
           cd 09_SYSTEM20/runtime
-          sha256sum eonmem-linux-amd64 EonMemory.exe eon.state.json > SHA256SUMS
+          sha256sum eon.loader.py eon.runtime.json > SHA256SUMS
 
       - name: Refresh repository hashes
         shell: bash
@@ -66,6 +89,8 @@ jobs:
               rel = path.relative_to(root).as_posix()
               if rel.startswith('.git/') or rel == 'FILE_HASHES.sha256':
                   continue
+              if rel == '09_SYSTEM20/runtime/eon.state.json':
+                  continue
               if rel.endswith('/Launch_EON.zip') or rel == 'Launch_EON.zip':
                   continue
               if rel.endswith('/backpack.zip') or rel == 'backpack.zip':
@@ -81,19 +106,18 @@ jobs:
                   output.write(f'{digest}  {rel}\n')
           PY
 
-      - name: Commit generated runtime
+      - name: Commit generated capsule
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add 09_SYSTEM20/runtime/eonmem-linux-amd64 \
-                  09_SYSTEM20/runtime/EonMemory.exe \
+          git add 09_SYSTEM20/runtime/eon.runtime.json \
                   09_SYSTEM20/runtime/SHA256SUMS \
                   FILE_HASHES.sha256
           if git diff --cached --quiet; then
-            echo 'Runtime is already current.'
+            echo 'Python capsule is already current.'
             exit 0
           fi
-          git commit -m 'Build EonMem v0.1.1 runtime [skip ci]'
+          git commit -m 'Build EonMem Python capsule [skip ci]'
           git push
