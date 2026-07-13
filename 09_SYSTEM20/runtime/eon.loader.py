@@ -16,9 +16,9 @@ from typing import Any
 CAPSULE_FILE = "eon.runtime.json"
 STATE_FILE = "eon.state.json"
 EXPECTED_FORMAT = "EonRuntimeCapsule"
-EXPECTED_VERSION = 1
+EXPECTED_VERSION = 2
 EXPECTED_ENGINE = "python3"
-EXPECTED_CODEC = "gzip+base64"
+EXPECTED_CODEC = "gzip+base64-chunks"
 
 
 class CapsuleError(RuntimeError):
@@ -46,13 +46,16 @@ def load_capsule(path: Path) -> dict[str, Any]:
 
 
 def decode_source(capsule: dict[str, Any]) -> bytes:
-    payload = capsule.get("payload")
+    chunks = capsule.get("payload_chunks")
     expected_hash = capsule.get("source_sha256")
-    if not isinstance(payload, str) or not payload:
-        raise CapsuleError("runtime-капсула не содержит payload")
+    if not isinstance(chunks, list) or not chunks:
+        raise CapsuleError("runtime-капсула не содержит payload_chunks")
+    if not all(isinstance(chunk, str) and chunk for chunk in chunks):
+        raise CapsuleError("runtime-капсула содержит некорректный payload_chunks")
     if not isinstance(expected_hash, str) or len(expected_hash) != 64:
         raise CapsuleError("runtime-капсула не содержит корректный source_sha256")
 
+    payload = "".join(chunks)
     try:
         compressed = base64.b64decode(payload, validate=True)
         source = gzip.decompress(compressed)

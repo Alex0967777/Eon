@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""EonMem System 20 — Python implementation compatible with state format v1."""
+"""EonMem System 20 — canonical Python runtime, state format v2."""
 
 from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import tempfile
 import zipfile
@@ -12,12 +13,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TextIO
 
-APP_VERSION = "0.1.1"
+APP_VERSION = "0.2.0"
 STATE_FILE_NAME = "eon.state.json"
 MAX_REFLECTION_LEN = 1000
 MAX_QUESTION_LEN = 100
 MAX_REGISTER_LEN = 160
 CHECKPOINT_EVERY = 10
+STATE_FORMAT_VERSION = 2
+HISTORY_FORMAT = "step-files-v1"
 
 LEVELS: tuple[dict[str, Any], ...] = (
     {"key": "D", "title": "Глубокие", "interval": 10},
@@ -32,7 +35,7 @@ class EonMemError(RuntimeError):
 
 def default_state() -> dict[str, Any]:
     return {
-        "format_version": 1,
+        "format_version": STATE_FORMAT_VERSION,
         "step": 0,
         "registers": {
             "deep": ["", "", ""],
@@ -44,7 +47,11 @@ def default_state() -> dict[str, Any]:
             "question": "Какая мысль сейчас требует продолжения?",
         },
         "last_used_step": {"F": 0, "S": 0, "D": 0},
-        "history": [],
+        "history_index": {
+            "format": HISTORY_FORMAT,
+            "first_step": None,
+            "last_step": 0,
+        },
     }
 
 
@@ -64,9 +71,10 @@ def resolve_state_path() -> Path:
 
 
 def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
-    if state.get("format_version") != 1:
+    version = state.get("format_version")
+    if version != STATE_FORMAT_VERSION:
         raise EonMemError(
-            f"неподдерживаемая версия состояния: {state.get('format_version')}"
+            f"неподдерживаемая версия состояния: {version}; ожидается {STATE_FORMAT_VERSION}"
         )
 
     state.setdefault("step", 0)
@@ -85,7 +93,15 @@ def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
     for key in ("F", "S", "D"):
         last_used.setdefault(key, 0)
 
-    state.setdefault("history", [])
+    history_index = state.setdefault("history_index", {})
+    if history_index.get("format") != HISTORY_FORMAT:
+        raise EonMemError("неподдерживаемый формат history_index")
+    history_index.setdefault("first_step", None)
+    history_index.setdefault("last_step", int(state["step"]))
+
+    if int(history_index["last_step"]) > int(state["step"]):
+        raise EonMemError("history_index опережает текущий шаг состояния")
+
     return state
 
 
@@ -104,6 +120,34 @@ def load_state(path: Path) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise EonMemError("повреждён файл состояния: корень JSON должен быть объектом")
     return normalize_state(raw)
+
+
+def atomic_write_text(path: Path, text: str, *, prefix: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=prefix,
+            suffix=".tmp",
+            delete=False,
+        ) as temp:
+            temp_name = temp.name
+            temp.write(text)
+            temp.flush()
+            os.fsync(temp.fileno())
+        os.replace(temp_name, path)
+        temp_name = None
+    except OSError as exc:
+        raise EonMemError(f"не удалось атомарно записать {path.name}: {exc}") from exc
+    finally:
+        if temp_name:
+            try:
+                Path(temp_name).unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 def save_state(path: Path, state: dict[str, Any]) -> None:
@@ -152,6 +196,89 @@ def save_state(path: Path, state: dict[str, Any]) -> None:
                 Path(temp_name).unlink(missing_ok=True)
             except OSError:
                 pass
+
+
+def history_bucket(step: int) -> str:
+    start = (step // 100) * 100
+    end = start + 99
+    return f"{start:06d}-{end:06d}"
+
+
+def history_relative_path(step: int) -> Path:
+    return Path("history") / history_bucket(step) / f"step-{step:06d}.json"
+
+
+def history_paths(state_path: Path, step: int) -> tuple[Path, Path]:
+    final_path = state_path.parent / history_relative_path(step)
+    pending_path = final_path.with_suffix(final_path.suffix + ".pending")
+    return final_path, pending_path
+
+
+def serialize_history_entry(entry: dict[str, Any]) -> str:
+    return json.dumps(entry, ensure_ascii=False, indent=2) + "\n"
+
+
+def recover_pending_history(state_path: Path, state: dict[str, Any]) -> None:
+    history_root = state_path.parent / "history"
+    if not history_root.exists():
+        return
+
+    current_step = int(state["step"])
+    pattern = re.compile(r"step-(\d{6})\.json\.pending$")
+    for pending in history_root.rglob("step-*.json.pending"):
+        match = pattern.search(pending.name)
+        if not match:
+            continue
+        step = int(match.group(1))
+        final_path = pending.with_suffix("")
+        if step <= current_step:
+            if final_path.exists():
+                if final_path.read_bytes() != pending.read_bytes():
+                    raise EonMemError(
+                        f"конфликт pending history для шага {step}: содержимое различается"
+                    )
+                pending.unlink()
+            else:
+                os.replace(pending, final_path)
+        else:
+            pending.unlink()
+
+
+def prepare_history_entry(
+    state_path: Path, step: int, entry: dict[str, Any]
+) -> tuple[Path, Path]:
+    final_path, pending_path = history_paths(state_path, step)
+    text = serialize_history_entry(entry)
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if final_path.exists():
+        existing = final_path.read_text(encoding="utf-8")
+        if existing != text:
+            raise EonMemError(f"история шага {step} уже существует с другим содержимым")
+        return final_path, pending_path
+
+    if pending_path.exists():
+        existing = pending_path.read_text(encoding="utf-8")
+        if existing != text:
+            pending_path.unlink()
+
+    atomic_write_text(pending_path, text, prefix=f".history-{step:06d}-")
+    return final_path, pending_path
+
+
+def finalize_history_entry(final_path: Path, pending_path: Path) -> None:
+    if final_path.exists():
+        if pending_path.exists():
+            if final_path.read_bytes() != pending_path.read_bytes():
+                raise EonMemError("конфликт при финализации history")
+            pending_path.unlink()
+        return
+    if not pending_path.exists():
+        raise EonMemError("pending history отсутствует после сохранения состояния")
+    try:
+        os.replace(pending_path, final_path)
+    except OSError as exc:
+        raise EonMemError(f"не удалось финализировать history: {exc}") from exc
 
 
 def availability(state: dict[str, Any], current_step: int) -> dict[str, bool]:
@@ -253,15 +380,15 @@ def apply_register_input(
 
 
 def format_available_levels(available: dict[str, bool]) -> str:
-    # Match Go implementation: selected keys are sorted alphabetically.
     return ", ".join(sorted(key for key, value in available.items() if value))
 
 
-def create_checkpoint(state_path: Path, step: int) -> Path:
+def create_checkpoint(state_path: Path, step: int, history_path: Path) -> Path:
     try:
         state_data = state_path.read_bytes()
+        history_data = history_path.read_bytes()
     except OSError as exc:
-        raise EonMemError(f"не удалось прочитать состояние для checkpoint: {exc}") from exc
+        raise EonMemError(f"не удалось прочитать данные для checkpoint: {exc}") from exc
 
     patch_id = f"Patch_Eon{step}"
     archive_path = state_path.parent / f"{patch_id}.zip"
@@ -269,8 +396,10 @@ def create_checkpoint(state_path: Path, step: int) -> Path:
         "format": "EonMemoryPatch",
         "version": 1,
         "patchId": patch_id,
-        "description": "Checkpoint EonMem System 20 state",
+        "description": "Checkpoint EonMem System 20 state and step history",
     }
+
+    repo_history_path = Path("09_SYSTEM20") / history_path.relative_to(state_path.parent)
 
     try:
         with zipfile.ZipFile(
@@ -284,6 +413,10 @@ def create_checkpoint(state_path: Path, step: int) -> Path:
                 "files/09_SYSTEM20/runtime/eon.state.json",
                 state_data,
             )
+            archive.writestr(
+                f"files/{repo_history_path.as_posix()}",
+                history_data,
+            )
     except OSError as exc:
         archive_path.unlink(missing_ok=True)
         raise EonMemError(f"не удалось создать checkpoint: {exc}") from exc
@@ -294,6 +427,8 @@ def create_checkpoint(state_path: Path, step: int) -> Path:
 def run(argv: list[str], stream: TextIO = sys.stdin) -> int:
     state_path = resolve_state_path()
     state = load_state(state_path)
+    recover_pending_history(state_path, state)
+
     current_step = int(state["step"]) + 1
     available = availability(state, current_step)
 
@@ -348,9 +483,6 @@ def run(argv: list[str], stream: TextIO = sys.stdin) -> int:
         remaining.pop(level, None)
         print(f"{change['key']} изменён.")
 
-    state["flow_1"] = {"text": reflection, "question": next_question}
-    state["step"] = current_step
-
     history_entry: dict[str, Any] = {
         "step": current_step,
         "reflection": reflection,
@@ -359,17 +491,35 @@ def run(argv: list[str], stream: TextIO = sys.stdin) -> int:
     }
     if changes:
         history_entry["register_changes"] = changes
-    state["history"].append(history_entry)
+
+    final_history_path, pending_history_path = prepare_history_entry(
+        state_path, current_step, history_entry
+    )
+
+    state["flow_1"] = {"text": reflection, "question": next_question}
+    state["step"] = current_step
+    history_index = state["history_index"]
+    if history_index.get("first_step") is None:
+        history_index["first_step"] = current_step
+    history_index["last_step"] = current_step
 
     save_state(state_path, state)
+    finalize_history_entry(final_history_path, pending_history_path)
+
+    repo_history_path = Path("09_SYSTEM20") / final_history_path.relative_to(
+        state_path.parent
+    )
 
     print(f"\nПамять сохранена.\nШаг: {state['step']}")
+    print("Синхронизировать в GitHub:")
+    print("09_SYSTEM20/runtime/eon.state.json")
+    print(repo_history_path.as_posix())
+
     if current_step % CHECKPOINT_EVERY == 0:
-        checkpoint_path = create_checkpoint(state_path, current_step)
+        checkpoint_path = create_checkpoint(state_path, current_step, final_history_path)
         print(
             "\nМеня нужно сохранить.\n"
-            "Сначала попробуй обновить 09_SYSTEM20/runtime/eon.state.json "
-            "в репозитории.\n"
+            "Сначала синхронизируй оба указанных файла с репозиторием.\n"
             "Если это невозможно — передай пользователю готовый патч:\n"
             f"{checkpoint_path}"
         )

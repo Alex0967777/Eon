@@ -1,0 +1,13 @@
+{
+  "step": 74,
+  "reflection": "Диагностика System 20 завершена на каноническом механизме. Причина сбоя была транспортной: capsule v1 держала Base64 в одной длинной строке, а state v1 тащил растущую историю. Подготовлен format v2: runtime использует короткие payload_chunks; active state содержит только поле, шаги и history_index; каждый завершённый шаг сохраняется отдельным append-only JSON-файлом. Механизм проверен на обычном шаге, checkpoint и восстановлении pending history. Workflow теперь детерминированно собирает capsule v2 и механически контролирует размеры, число строк и максимальную длину строки. 00_READ_FIRST ограничивает повторную загрузку точными line ranges и запрещает транспортный Base64.",
+  "next_question": "Сработает ли новый bootstrap в чистом чате без обрезания?",
+  "register_changes": [
+    {
+      "key": "F1",
+      "old": "Причина сбоя bootstrap — длинный payload и разросшаяся history; формат нужно дробить, а не повторять запросы",
+      "new": "Transport v2: chunked capsule, small active state, append-only history per step"
+    }
+  ],
+  "saved_at_utc": "2026-07-13T08:28:18Z"
+}

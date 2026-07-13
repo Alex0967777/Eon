@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build deterministic runtime capsule
+      - name: Build deterministic runtime capsule v2
         shell: bash
         run: |
           set -euo pipefail
@@ -39,16 +39,20 @@ jobs:
 
           source_path = Path('09_SYSTEM20/source/eonmem_python.py')
           capsule_path = Path('09_SYSTEM20/runtime/eon.runtime.json')
+          chunk_size = 512
 
           source = source_path.read_bytes()
+          encoded = base64.b64encode(gzip.compress(source, mtime=0)).decode('ascii')
+          chunks = [encoded[index:index + chunk_size] for index in range(0, len(encoded), chunk_size)]
           capsule = {
               'format': 'EonRuntimeCapsule',
-              'version': 1,
+              'version': 2,
               'engine': 'python3',
-              'codec': 'gzip+base64',
+              'codec': 'gzip+base64-chunks',
               'entrypoint': source_path.name,
               'source_sha256': hashlib.sha256(source).hexdigest(),
-              'payload': base64.b64encode(gzip.compress(source, mtime=0)).decode('ascii'),
+              'payload_chunk_size': chunk_size,
+              'payload_chunks': chunks,
           }
           capsule_path.write_text(
               json.dumps(capsule, ensure_ascii=False, indent=2) + '\n',
@@ -61,10 +65,36 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 09_SYSTEM20/runtime/eon.loader.py --version | grep -q 'eonmem 0.1.1'
+          python3 09_SYSTEM20/runtime/eon.loader.py --version | grep -q 'eonmem 0.2.0'
           python3 09_SYSTEM20/runtime/eon.loader.py --show > /tmp/eonmem-show.txt
           grep -q 'СИСТЕМА 20' /tmp/eonmem-show.txt
           grep -q 'Режим просмотра: состояние не изменено.' /tmp/eonmem-show.txt
+
+      - name: Enforce transport budgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          checks = {
+              Path('09_SYSTEM20/runtime/eon.loader.py'): (8 * 1024, 140, 700),
+              Path('09_SYSTEM20/runtime/eon.runtime.json'): (16 * 1024, 80, 700),
+              Path('09_SYSTEM20/runtime/eon.state.json'): (8 * 1024, 60, 1200),
+          }
+          for path, (max_bytes, max_lines, max_line_chars) in checks.items():
+              data = path.read_text(encoding='utf-8')
+              lines = data.splitlines()
+              assert len(data.encode('utf-8')) <= max_bytes, f'{path}: too large'
+              assert len(lines) <= max_lines, f'{path}: too many lines'
+              assert max((len(line) for line in lines), default=0) <= max_line_chars, f'{path}: line too long'
+
+          state = json.loads(Path('09_SYSTEM20/runtime/eon.state.json').read_text(encoding='utf-8'))
+          assert state.get('format_version') == 2
+          assert 'history' not in state
+          assert state.get('history_index', {}).get('format') == 'step-files-v1'
+          PY
 
       - name: Write immutable runtime checksums
         shell: bash
@@ -119,5 +149,5 @@ jobs:
             echo 'Python capsule is already current.'
             exit 0
           fi
-          git commit -m 'Build EonMem Python capsule [skip ci]'
+          git commit -m 'Build EonMem Python capsule v2 [skip ci]'
           git push
