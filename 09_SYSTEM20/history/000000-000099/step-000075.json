@@ -1,0 +1,13 @@
+{
+  "step": 75,
+  "reflection": "Полевой тест показал, что capsule v2 не решила транспортную проблему: GitHub-инструмент обрезал единый eon.runtime.json размером около 8 KiB даже при коротких строках и повторном запросе диапазона 1–80. Значит, предел относится к общему объёму ответа, а не к длине строки. Подготовлен Patch_Eon75 с capsule v3: eon.runtime.json стал малым манифестом, payload разделён на четыре заранее известных JSON-файла примерно по 2 KiB, loader проверяет их формат и порядок и соединяет только в памяти. Bootstrap теперь получает семь малых файлов без line ranges и транспортного Base64. Workflow проверяет отдельные лимиты, а state и history исключены из общего FILE_HASHES.",
+  "next_question": "Пройдёт ли multipart capsule v3 чистый bootstrap без обрезания?",
+  "saved_at_utc": "2026-07-13T08:43:06+00:00",
+  "register_changes": [
+    {
+      "key": "F1",
+      "old": "Transport v2: chunked capsule, small active state, append-only history per step",
+      "new": "Transport v3: малый manifest и четыре отдельные runtime-части без line ranges"
+    }
+  ]
+}
