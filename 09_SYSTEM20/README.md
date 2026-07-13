@@ -1,4 +1,4 @@
-# EonMem — System 20 transport-safe capsule
+# EonMem — System 20 multipart transport-safe capsule
 
 ## Назначение
 
@@ -8,35 +8,38 @@ EonMem отделяет жёсткую механику памяти от смы
 
 ## Структура
 
-- `runtime/eon.loader.py` — минимальный loader capsule v2;
-- `runtime/eon.runtime.json` — детерминированная Python-капсула `gzip+base64-chunks`;
+- `runtime/eon.loader.py` — минимальный loader capsule v3;
+- `runtime/eon.runtime.json` — малый манифест `gzip+base64-parts`;
+- `runtime/eon.runtime.part01.json` … `part04.json` — четыре небольшие части payload;
 - `runtime/eon.state.json` — малое активное состояние format v2;
 - `runtime/SHA256SUMS` — контрольные суммы неизменяемых loader и capsule;
 - `history/<bucket>/step-<N>.json` — append-only запись каждого завершённого шага;
 - `source/eonmem_python.py` — канонический исходник только для явной разработки;
 - прежние Go/Windows runtime-файлы — legacy, не штатный маршрут.
 
-## Почему format v2
+## Почему multipart capsule v3
 
 В v1 Base64 payload находился в одной длинной JSON-строке, а полная история накапливалась внутри `eon.state.json`. GitHub-инструмент мог обрезать оба файла ещё до запуска loader.
 
-V2 устраняет оба источника роста:
+V2 уменьшил active state, но единый `eon.runtime.json` размером около 8 KiB всё ещё мог быть обрезан общим лимитом ответа GitHub-инструмента. V3 устраняет и этот предел:
 
-1. runtime payload разбит на `payload_chunks` по 512 символов;
-2. active state больше не содержит массив полной истории;
-3. каждый шаг хранится отдельным небольшим JSON-файлом;
-4. workflow проверяет верхние пределы размера и длины строк.
+1. `eon.runtime.json` содержит только малый манифест;
+2. payload разнесён по четырём отдельным JSON-файлам менее 4 KiB каждый;
+3. внутри каждой части Base64 разбит на строки по 256 символов;
+4. active state не содержит полной истории;
+5. каждый шаг хранится отдельным небольшим JSON-файлом;
+6. workflow механически проверяет пределы каждого транспортного файла.
 
-## Capsule v2
+## Capsule v3
 
 Loader принимает только:
 
 - `format = EonRuntimeCapsule`;
-- `version = 2`;
+- `version = 3`;
 - `engine = python3`;
-- `codec = gzip+base64-chunks`.
+- `codec = gzip+base64-parts`.
 
-Loader соединяет чанки только в памяти, декодирует gzip, сверяет `source_sha256` и выполняет точный исходник. На диск исходник не записывается.
+Манифест перечисляет четыре фиксированных part-файла. Loader проверяет их формат и порядок, соединяет короткие chunks только в памяти, декодирует gzip, сверяет `source_sha256` и выполняет точный исходник. На диск исходник не записывается.
 
 ## Active state v2
 
@@ -110,7 +113,7 @@ python3 ./eon.loader.py < input.txt
 1. изменить `source/eonmem_python.py`;
 2. проверить на копии active state;
 3. проверить запись state + history и recovery pending;
-4. собрать capsule v2 с `gzip(..., mtime=0)` и чанками по 512 символов;
+4. собрать capsule v3 с `gzip(..., mtime=0)`, четырьмя part-файлами и чанками по 256 символов;
 5. проверить loader `--version` и `--show`;
 6. проверить транспортные бюджеты;
 7. обновить `SHA256SUMS`, workflow и документацию;

@@ -6,42 +6,48 @@
 
 ## Ограниченный bootstrap: единственный штатный вход
 
-Bootstrap — короткая техническая транзакция, а не задача исследования, ремонта или разработки. Его цель — получить три точных runtime-файла, один раз запустить loader и либо продолжить цикл, либо немедленно остановиться.
+Bootstrap — короткая техническая транзакция, а не задача исследования, ремонта или разработки. Его цель — получить точные небольшие runtime-файлы, один раз запустить loader и либо продолжить цикл, либо немедленно остановиться.
 
-Актуальная память состоит из трёх файлов:
+Актуальная память состоит из семи файлов:
 
 - `09_SYSTEM20/runtime/eon.loader.py` — минимальный проверяющий загрузчик;
-- `09_SYSTEM20/runtime/eon.runtime.json` — неизменяемая Python-капсула EonMem;
+- `09_SYSTEM20/runtime/eon.runtime.json` — малый манифест multipart-капсулы;
+- `09_SYSTEM20/runtime/eon.runtime.part01.json`;
+- `09_SYSTEM20/runtime/eon.runtime.part02.json`;
+- `09_SYSTEM20/runtime/eon.runtime.part03.json`;
+- `09_SYSTEM20/runtime/eon.runtime.part04.json` — четыре непрозрачные части payload;
 - `09_SYSTEM20/runtime/eon.state.json` — малое изменяемое активное состояние.
 
-Получай только эти три точных пути из `Alex0967777/Eon` и записывай без смыслового анализа в `/mnt/data/eonmem/`.
+Получай только эти семь точных путей из `Alex0967777/Eon` и записывай без смыслового анализа в `/mnt/data/eonmem/`. Имена частей фиксированы; искать дополнительные части не нужно.
 
 Raw-источники заданы заранее и не требуют поиска:
 
 - `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.loader.py`
 - `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.runtime.json`
+- `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.runtime.part01.json`
+- `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.runtime.part02.json`
+- `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.runtime.part03.json`
+- `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.runtime.part04.json`
 - `https://raw.githubusercontent.com/Alex0967777/Eon/main/09_SYSTEM20/runtime/eon.state.json`
 
 ### Транспортные инварианты
 
-Файлы специально ограничены для GitHub-инструмента:
+Каждый файл гарантированно мал и должен полностью помещаться в один ответ GitHub-инструмента:
 
 - `eon.loader.py` — не более 140 строк и 8 KiB;
-- `eon.runtime.json` — не более 80 строк и 16 KiB, каждая строка не длиннее 700 символов;
-- `eon.state.json` — не более 60 строк и 8 KiB, каждая строка не длиннее 1200 символов.
+- `eon.runtime.json` — не более 60 строк и 4 KiB;
+- каждая `eon.runtime.partNN.json` — не более 40 строк и 4 KiB, строка не длиннее 400 символов;
+- `eon.state.json` — не более 60 строк и 8 KiB.
 
-`eon.runtime.json` использует `payload_chunks`: Base64 разбит на короткие строки. `eon.state.json` не содержит полной истории. Каждый завершённый шаг хранится отдельным небольшим файлом в `09_SYSTEM20/history/...` и для bootstrap не требуется.
+Манифест не содержит payload. Payload разнесён по четырём отдельным JSON-файлам, внутри которых Base64 дополнительно разбит на короткие строки. `eon.state.json` не содержит полной истории. History-файлы для bootstrap не требуются.
 
 ### Разрешённый бюджет bootstrap
 
 Разрешено только:
 
 1. создать `/mnt/data/eonmem/`;
-2. один раз получить каждый из трёх точных файлов через встроенный GitHub-инструмент в UTF-8;
-3. если ответ для конкретного пути явно обрезан, сделать ровно одну повторную попытку **того же пути** с диапазоном строк:
-   - loader: `1–140`;
-   - runtime: `1–80`;
-   - state: `1–60`;
+2. один раз получить каждый из семи точных файлов через встроенный GitHub-инструмент в UTF-8;
+3. если конкретный файл явно пуст или обрезан, сделать ровно одну повторную попытку **того же точного пути** в UTF-8 без изменения диапазона и кодировки;
 4. записать полное содержимое без изменения;
 5. один раз выполнить:
 
@@ -49,7 +55,7 @@ Raw-источники заданы заранее и не требуют пои
 python3 /mnt/data/eonmem/eon.loader.py --show
 ```
 
-Транспортный Base64 для повторной загрузки не использовать: он снова создаёт длинную строку и не лечит обрезание. Внутренние `payload_chunks` не соединять и не анализировать вручную — это делает loader.
+Транспортный Base64 и line ranges не использовать: multipart-формат устраняет необходимость собирать один большой ответ. Внутренние payload-части не соединять и не анализировать вручную — это делает loader.
 
 ### Нулевой бюджет диагностики
 
@@ -82,7 +88,7 @@ python3 /mnt/data/eonmem/eon.loader.py --show
 python3 /mnt/data/eonmem/eon.loader.py --show
 ```
 
-Loader принимает только capsule v2 с `codec = gzip+base64-chunks`, соединяет `payload_chunks` в памяти, декодирует их, проверяет `source_sha256` и исполняет точный механизм. Исходный Python-файл на диск не записывается.
+Loader принимает только capsule v3 с `codec = gzip+base64-parts`, читает четыре фиксированные части по манифесту, соединяет payload только в памяти, декодирует его, проверяет `source_sha256` и исполняет точный механизм. Исходный Python-файл на диск не записывается.
 
 Контекст, README, история чата и формат state не являются исходным кодом программы.
 

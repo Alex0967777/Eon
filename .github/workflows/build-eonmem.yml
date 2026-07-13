@@ -26,40 +26,67 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build deterministic runtime capsule v2
+      - name: Build deterministic multipart runtime capsule v3
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          python - <<'PYCODE'
           from pathlib import Path
           import base64
           import gzip
           import hashlib
           import json
+          import re
 
           source_path = Path('09_SYSTEM20/source/eonmem_python.py')
-          capsule_path = Path('09_SYSTEM20/runtime/eon.runtime.json')
-          chunk_size = 512
+          runtime = Path('09_SYSTEM20/runtime')
+          manifest_path = runtime / 'eon.runtime.json'
+          part_count = 4
+          chunk_size = 256
 
           source = source_path.read_bytes()
           encoded = base64.b64encode(gzip.compress(source, mtime=0)).decode('ascii')
-          chunks = [encoded[index:index + chunk_size] for index in range(0, len(encoded), chunk_size)]
-          capsule = {
+          bounds = [round(i * len(encoded) / part_count) for i in range(part_count + 1)]
+          parts = []
+
+          for index in range(1, part_count + 1):
+              segment = encoded[bounds[index - 1]:bounds[index]]
+              chunks = [segment[pos:pos + chunk_size] for pos in range(0, len(segment), chunk_size)]
+              filename = f'eon.runtime.part{index:02d}.json'
+              part = {
+                  'format': 'EonRuntimePart',
+                  'version': 1,
+                  'index': index,
+                  'payload_chunks': chunks,
+              }
+              (runtime / filename).write_text(
+                  json.dumps(part, ensure_ascii=False, indent=2) + '\n',
+                  encoding='utf-8',
+                  newline='\n',
+              )
+              parts.append({'index': index, 'file': filename})
+
+          for path in runtime.glob('eon.runtime.part*.json'):
+              match = re.fullmatch(r'eon\.runtime\.part(\d{2})\.json', path.name)
+              if not match or int(match.group(1)) > part_count:
+                  path.unlink()
+
+          manifest = {
               'format': 'EonRuntimeCapsule',
-              'version': 2,
+              'version': 3,
               'engine': 'python3',
-              'codec': 'gzip+base64-chunks',
+              'codec': 'gzip+base64-parts',
               'entrypoint': source_path.name,
               'source_sha256': hashlib.sha256(source).hexdigest(),
-              'payload_chunk_size': chunk_size,
-              'payload_chunks': chunks,
+              'part_count': part_count,
+              'parts': parts,
           }
-          capsule_path.write_text(
-              json.dumps(capsule, ensure_ascii=False, indent=2) + '\n',
+          manifest_path.write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + '\n',
               encoding='utf-8',
               newline='\n',
           )
-          PY
+          PYCODE
 
       - name: Smoke test capsule route
         shell: bash
@@ -74,15 +101,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          python - <<'PYCODE'
           from pathlib import Path
           import json
 
+          runtime = Path('09_SYSTEM20/runtime')
           checks = {
-              Path('09_SYSTEM20/runtime/eon.loader.py'): (8 * 1024, 140, 700),
-              Path('09_SYSTEM20/runtime/eon.runtime.json'): (16 * 1024, 80, 700),
-              Path('09_SYSTEM20/runtime/eon.state.json'): (8 * 1024, 60, 1200),
+              runtime / 'eon.loader.py': (8 * 1024, 140, 700),
+              runtime / 'eon.runtime.json': (4 * 1024, 60, 700),
+              runtime / 'eon.state.json': (8 * 1024, 60, 1200),
           }
+          for index in range(1, 5):
+              checks[runtime / f'eon.runtime.part{index:02d}.json'] = (4 * 1024, 40, 400)
+
           for path, (max_bytes, max_lines, max_line_chars) in checks.items():
               data = path.read_text(encoding='utf-8')
               lines = data.splitlines()
@@ -90,23 +121,32 @@ jobs:
               assert len(lines) <= max_lines, f'{path}: too many lines'
               assert max((len(line) for line in lines), default=0) <= max_line_chars, f'{path}: line too long'
 
-          state = json.loads(Path('09_SYSTEM20/runtime/eon.state.json').read_text(encoding='utf-8'))
+          manifest = json.loads((runtime / 'eon.runtime.json').read_text(encoding='utf-8'))
+          assert manifest.get('version') == 3
+          assert manifest.get('codec') == 'gzip+base64-parts'
+          assert manifest.get('part_count') == 4
+          assert [part['file'] for part in manifest['parts']] == [
+              f'eon.runtime.part{index:02d}.json' for index in range(1, 5)
+          ]
+
+          state = json.loads((runtime / 'eon.state.json').read_text(encoding='utf-8'))
           assert state.get('format_version') == 2
           assert 'history' not in state
           assert state.get('history_index', {}).get('format') == 'step-files-v1'
-          PY
+          PYCODE
 
       - name: Write immutable runtime checksums
         shell: bash
         run: |
           set -euo pipefail
           cd 09_SYSTEM20/runtime
-          sha256sum eon.loader.py eon.runtime.json > SHA256SUMS
+          sha256sum eon.loader.py eon.runtime.json eon.runtime.part01.json \
+                    eon.runtime.part02.json eon.runtime.part03.json eon.runtime.part04.json > SHA256SUMS
 
       - name: Refresh repository hashes
         shell: bash
         run: |
-          python - <<'PY'
+          python - <<'PYCODE'
           from pathlib import Path
           import hashlib
           import re
@@ -121,6 +161,8 @@ jobs:
                   continue
               if rel == '09_SYSTEM20/runtime/eon.state.json':
                   continue
+              if rel.startswith('09_SYSTEM20/history/'):
+                  continue
               if rel.endswith('/Launch_EON.zip') or rel == 'Launch_EON.zip':
                   continue
               if rel.endswith('/backpack.zip') or rel == 'backpack.zip':
@@ -134,7 +176,7 @@ jobs:
               for rel, path in items:
                   digest = hashlib.sha256(path.read_bytes()).hexdigest()
                   output.write(f'{digest}  {rel}\n')
-          PY
+          PYCODE
 
       - name: Commit generated capsule
         shell: bash
@@ -142,12 +184,13 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add 09_SYSTEM20/runtime/eon.runtime.json \
-                  09_SYSTEM20/runtime/SHA256SUMS \
-                  FILE_HASHES.sha256
+          git add -A 09_SYSTEM20/runtime/eon.runtime.json \
+                     09_SYSTEM20/runtime/eon.runtime.part*.json \
+                     09_SYSTEM20/runtime/SHA256SUMS \
+                     FILE_HASHES.sha256
           if git diff --cached --quiet; then
-            echo 'Python capsule is already current.'
+            echo 'Python multipart capsule is already current.'
             exit 0
           fi
-          git commit -m 'Build EonMem Python capsule v2 [skip ci]'
+          git commit -m 'Build EonMem Python capsule v3 [skip ci]'
           git push
