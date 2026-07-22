@@ -1,6 +1,6 @@
-file=EonMemory80.py
-step=80
-sha256=0f013cfdb08be99f7161e739088f748f0ba6cc77c865f286539fe369a58e55e9
+file=EonMemory81.py
+step=81
+sha256=113edb6a717d0acc8c09eb86fda3c4a65030ccbc00e4d239e30ba41237f45dec
 bootstrap=BOOTSTRAP.py
-bootstrap_sha256=955673b5f576edde852a589e76193cdb394967f736ca2b08d51c7d34d18cd338
+bootstrap_sha256=99b75d0b6abb371787341e06187867b1bfbd51e714aa8af9ed7dddf02f52aedc
 format=2
