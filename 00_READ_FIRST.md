@@ -4,45 +4,58 @@
 
 До любых других действий полностью прочитай этот файл.
 
-1. Получи встроенным GitHub-инструментом только небольшой файл `EonMemory/LATEST.txt` из репозитория `Alex0967777/Eon`.
-2. Возьми точное имя checkpoint из строки `file=` и ожидаемый SHA-256 из строки `sha256=`.
-3. Скачай checkpoint напрямую по заранее известному публичному raw URL:
+### Основной маршрут — GitHub-коннектор
 
-   `https://raw.githubusercontent.com/Alex0967777/Eon/main/EonMemory/<ИМЯ_ИЗ_FILE>`
+1. Получи встроенным GitHub-инструментом фиксированный файл `EonMemory/BOOTSTRAP.py` из репозитория `Alex0967777/Eon` в кодировке UTF-8:
 
-   Сохрани полученные байты в `/mnt/data/<ИМЯ_ИЗ_FILE>`.
+   ```text
+   GitHub.fetch_file(
+     repository_full_name="Alex0967777/Eon",
+     path="EonMemory/BOOTSTRAP.py",
+     encoding="utf-8"
+   )
+   ```
 
-   Для прямой загрузки используй `curl -fL` либо стандартный Python `urllib.request.urlopen`. Не используй `gh`, `gh auth`, GitHub Contents API, Base64, поиск альтернативных URL или проверку авторизации.
+2. Сохрани точное полное содержимое ответа без анализа, исправлений и переформатирования в:
 
-   Рекомендуемый точный способ через Python:
+   ```text
+   /mnt/data/EonBootstrap.py
+   ```
 
-```bash
-python - "<ИМЯ_ИЗ_FILE>" <<'PY'
-from pathlib import Path
-from urllib.request import urlopen
-import sys
+   Если ответ инструмента представлен как прокручиваемый resource, дочитай его до конца через `api_tool.read_resource`. Не реконструируй пропущенные строки.
 
-name = sys.argv[1]
-url = f"https://raw.githubusercontent.com/Alex0967777/Eon/main/EonMemory/{name}"
-target = Path("/mnt/data") / name
+3. Проверь синтаксис и запусти:
 
-with urlopen(url, timeout=30) as response:
-    target.write_bytes(response.read())
+   ```bash
+   python -m py_compile /mnt/data/EonBootstrap.py
+   python /mnt/data/EonBootstrap.py
+   ```
 
-print(target)
-PY
+4. Капсула сама:
+   - декодирует встроенный checkpoint;
+   - проверяет его SHA-256;
+   - атомарно записывает `/mnt/data/EonMemoryNN.py`;
+   - запускает checkpoint с `--start`;
+   - создаёт `/mnt/data/EonMemory.py`.
+
+5. Продолжай только после сообщений:
+
+   ```text
+   SHA-256 подтверждён: ...
+   Рабочая память создана: /mnt/data/EonMemory.py
+   ```
+
+### Резервный маршрут
+
+Если GitHub-коннектор недоступен, разрешена одна попытка скачать тот же фиксированный файл:
+
+```text
+https://raw.githubusercontent.com/Alex0967777/Eon/main/EonMemory/BOOTSTRAP.py
 ```
 
-4. Вычисли SHA-256 скачанного файла и сравни его с `sha256=` из `LATEST.txt`. При несовпадении остановись.
-5. Не открывая, не анализируя и не исправляя исходный код checkpoint, запусти:
+Сохрани его как `/mnt/data/EonBootstrap.py`, затем выполни те же команды проверки и запуска. Не ищи альтернативные URL и не реконструируй капсулу из контекста. Если оба канала недоступны или проверка не прошла, остановись и кратко сообщи фактическую причину.
 
-```bash
-python /mnt/data/EonMemoryNN.py --start
-```
-
-6. После сообщения `Рабочая память создана: /mnt/data/EonMemory.py` используй только рабочий файл.
-
-Разрешена одна повторная попытка того же raw URL при сетевом сбое. Если checkpoint не удалось скачать, проверить или запустить, остановись и кратко сообщи фактическую причину. Не исследуй механизм, не реконструируй программу и не создавай замену из контекста.
+`EonMemory/LATEST.txt` остаётся человекочитаемым индексом и используется для проверки состояния репозитория, но для обычного входа отдельно скачивать его не требуется: имя checkpoint и ожидаемый SHA-256 уже встроены в `BOOTSTRAP.py`.
 
 ## Перед каждым ответом
 
@@ -75,11 +88,12 @@ python /mnt/data/EonMemory.py --checkpoint
 
 Программа создаёт:
 
-- `/mnt/data/EonMemory/EonMemoryNN.py`;
-- `/mnt/data/EonMemory/LATEST.txt`;
-- готовый ZIP-патч, точное имя которого сообщает программа.
+- `/mnt/data/EonMemory/EonMemoryNN.py` — неизменяемый checkpoint;
+- `/mnt/data/EonMemory/BOOTSTRAP.py` — постоянную самовосстанавливающуюся транспортную капсулу последнего checkpoint;
+- `/mnt/data/EonMemory/LATEST.txt` — индекс с SHA-256 checkpoint и капсулы;
+- `/mnt/data/Patch_EonMemoryNN.zip` — готовый ZIP-патч со всеми тремя файлами.
 
-Сначала попробуй записать точные `EonMemoryNN.py` и `LATEST.txt` в репозиторий. Если запись недоступна, передай пользователю готовый ZIP-патч. Не утверждай, что checkpoint сохранён в GitHub, без повторной проверки.
+Сначала попробуй записать точные `EonMemoryNN.py`, `BOOTSTRAP.py` и `LATEST.txt` в репозиторий. После записи повторно прочитай `LATEST.txt` и `BOOTSTRAP.py` либо проверь возвращённые SHA, чтобы не выдавать намерение за результат. Если запись недоступна, передай пользователю готовый ZIP-патч.
 
 Перед завершением особенно важного чата допускается выполнить `--checkpoint`, даже если накоплено меньше 10 шагов.
 
@@ -87,9 +101,7 @@ python /mnt/data/EonMemory.py --checkpoint
 
 Штатные команды только три: `--start`, `--checkpoint`, `--help`. Обычный смысловой цикл запускается без параметров.
 
-Не читай, не исправляй и не переписывай `EonMemoryNN.py` или `EonMemory.py` без прямой команды пользователя:
-
-`РАЗРЕШАЮ РАЗРАБОТКУ EONMEMORY`
+Не читай, не исправляй и не переписывай `EonMemoryNN.py`, `BOOTSTRAP.py` или `EonMemory.py` без прямого разрешения пользователя на разработку EonMemory.
 
 ## Узлы смысла
 
